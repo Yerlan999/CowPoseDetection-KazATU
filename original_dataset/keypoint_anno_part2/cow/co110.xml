@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+<annotation>
+	<image>co110.jpeg</image>
+	<category>cow</category>
+	<visible_bounds height="200" width="270" xmax="16" xmin="17"/>
+	<keypoints>
+		<keypoint name="L_eye" visible="0" x="0.00" y="0.00" z="0.00"/>
+		<keypoint name="R_eye" visible="1" x="252" y="62" z="0.00"/>
+		<keypoint name="L_ear" visible="1" x="270" y="34" z="0.00"/>
+		<keypoint name="R_ear" visible="1" x="237" y="34" z="0.00"/>
+		<keypoint name="Nose" visible="1" x="278" y="91" z="0.00"/>
+		<keypoint name="Throat" visible="1" x="239" y="91" z="0.00"/>
+		<keypoint name="Tail" visible="1" x="33" y="70" z="0.00"/>
+		<keypoint name="withers" visible="1" x="183" y="62" z="0.00"/>
+		<keypoint name="L_F_elbow" visible="0" x="0.00" y="0.00" z="0.00"/>
+		<keypoint name="R_F_elbow" visible="1" x="185" y="142" z="0.00"/>
+		<keypoint name="L_B_elbow" visible="0" x="0.00" y="0.00" z="0.00"/>
+		<keypoint name="R_B_elbow" visible="1" x="47" y="131" z="0.00"/>
+		<keypoint name="L_F_knee" visible="1" x="176" y="177" z="0.00"/>
+		<keypoint name="R_F_knee" visible="1" x="183" y="178" z="0.00"/>
+		<keypoint name="L_B_knee" visible="1" x="51" y="171" z="0.00"/>
+		<keypoint name="R_B_knee" visible="1" x="39" y="171" z="0.00"/>
+		<keypoint name="L_F_paw" visible="1" x="170" y="205" z="0.00"/>
+		<keypoint name="R_F_paw" visible="1" x="185" y="206" z="0.00"/>
+		<keypoint name="L_B_paw" visible="1" x="52" y="202" z="0.00"/>
+		<keypoint name="R_B_paw" visible="1" x="38" y="205" z="0.00"/>
+	</keypoints>
+</annotation>
