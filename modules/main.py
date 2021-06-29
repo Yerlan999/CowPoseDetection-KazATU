@@ -386,7 +386,7 @@ def start_annotation(dirname, image_class, keypoint_class):
             return
 
 
-        user_def_images_folder = Path(dirname)
+        user_def_images_folder = Path(Path(dirname).stem)
         project_full_path = Path(os.path.join(os.getcwd(), project_name))
 
 

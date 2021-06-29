@@ -25,10 +25,6 @@ def read_configfdb():
 
 
 
-
-
-
-
 # contin_last_session = last_session_var.get()
 
 
