@@ -5,6 +5,7 @@ from PIL import ImageTk, Image, ImageOps
 from pathlib import Path
 import numpy as np
 import pandas as pd
+from time import sleep
 
 
 background_color = "#bdb7b1"
@@ -296,10 +297,11 @@ def next_imageKeyPress(event, image_class, keypoint_class, keypoint_stack):
 
         if len(keypoint_stack.stack) == len(user_def_keypoints):
 
+            print("BEFORE NEXT WRITING TO DB: ", image_class.project_dir_path)
             config = {
                 "image_index": image_class.image_counter_class.current_image,
                 "original_images_folder": user_def_images_folder,
-                "project_folder_path": project_name.get(),
+                "project_folder_path": image_class.project_dir_path,
                 "dataset_path": dataset_path,
                 "image_size": image_class.image_size,
                 "key_points_name": user_def_keypoints,
@@ -312,7 +314,9 @@ def next_imageKeyPress(event, image_class, keypoint_class, keypoint_stack):
 
 
             # IMAGES SAVING HERE !!!!
-            os.chdir(Path(os.path.join(image_class.project_dir_path, "colored")))
+            print("when using... ", image_class.project_dir_path)
+
+            os.chdir(Path(os.path.join(image_class.project_dir_path.stem, "colored")))
             image_to_save = Image.open(image_class.current_image_path).convert('RGB').resize((image_class.image_size[0], image_class.image_size[1]), Image.ANTIALIAS)
             image_to_save.save("cow"+str(image_class.image_counter_class.current_image)+".jpeg")
             os.chdir("..")
@@ -344,11 +348,11 @@ def start_annotation(dirname, image_class, keypoint_class):
 
     contin_last_session = last_session_var.get()
 
-    project_name = proj_entry.get()
-
 
     if not contin_last_session:
         # STARTING NEW PROJECT
+
+        project_name = proj_entry.get()
 
         if not project_name:
             messagebox.showerror(title="Ошибка!", message="Ошибка!", detail="Пожалуйста, введите название проекта")
@@ -385,10 +389,8 @@ def start_annotation(dirname, image_class, keypoint_class):
             messagebox.showerror(title="Ошибка!", message="Ошибка!", detail="Пожалуйста, введите ключевые точки")
             return
 
-
-        user_def_images_folder = Path(Path(dirname).stem)
-        project_full_path = Path(os.path.join(os.getcwd(), project_name))
-
+        user_def_images_folder = Path(os.path.join(os.getcwd(), Path(Path(dirname).stem)))
+        project_full_path = Path(os.path.join(os.getcwd(), Path(project_name)))
 
         if not os.path.isdir(project_name):
             os.mkdir(project_name)
@@ -429,7 +431,7 @@ def start_annotation(dirname, image_class, keypoint_class):
         image_class.image_counter_class = image_counter
         image_class.current_image_path = current_image_path
         image_class.current_image_object = img
-        image_class.images_folder_path = dirname
+        image_class.images_folder_path = user_def_images_folder
         image_class.images_list = sorted_images
         canvas = Canvas(root, width = img.width(), height = img.height(), cursor="hand2", bd=3)
         first_imge_on_canvas = canvas.create_image(0, 0, anchor=NW, image=img)
@@ -443,13 +445,14 @@ def start_annotation(dirname, image_class, keypoint_class):
             keypoints_xy = [key_point + "_" + axis for key_point in user_def_keypoints for axis in AXES]
             writer.writerow(["index", "image_name"] + keypoints_xy)
 
+        print("BEFORE INITIAL WRITING TO DB: ", project_full_path)
         config = {
-        "image_index": 0,
-        "original_images_folder": user_def_images_folder,
-        "project_folder_path": project_name,
-        "dataset_path": dataset_path,
-        "image_size": image_class.image_size,
-        "key_points_name": user_def_keypoints,
+            "image_index": 0,
+            "original_images_folder": user_def_images_folder,
+            "project_folder_path": project_full_path,
+            "dataset_path": dataset_path,
+            "image_size": image_class.image_size,
+            "key_points_name": user_def_keypoints,
         }
 
         write_config2db(config)
@@ -467,13 +470,14 @@ def start_annotation(dirname, image_class, keypoint_class):
         width, height = data_dict["image_size"]
         user_def_keypoints = data_dict["key_points_name"]
 
+        print("READING FROM DB: ", project_folder_path)
 
         label_counter = LabelCounter(user_def_keypoints)
         label_counter.thresh = True
-        user_def_images_folder = Path(original_images_folder)
+        user_def_images_folder =  Path(os.path.join(os.getcwd()), Path(original_images_folder.stem))
 
 
-        filtered = list(filter(images_ext.match, os.listdir(original_images_folder)))
+        filtered = list(filter(images_ext.match, os.listdir(user_def_images_folder)))
 
         try:
             sorted_images = sorted(filtered ,key=lambda x: int(os.path.splitext(x)[0][3:]))
@@ -489,7 +493,7 @@ def start_annotation(dirname, image_class, keypoint_class):
         image_counter = ImageCounter(num_of_images)
         image_class.image_size = (width, height)
         try:
-            current_image_path = os.path.join(original_images_folder, sorted_images[image_index+1])
+            current_image_path = os.path.join(user_def_images_folder, sorted_images[image_index+1])
         except:
             messagebox.showerror(title="Ошибка!", message="Ошибка!", detail="Извините, но прошлый проект не найден")
             return
@@ -505,12 +509,18 @@ def start_annotation(dirname, image_class, keypoint_class):
         label_counter.show_current_label()
 
         img = ImageTk.PhotoImage(Image.open(current_image_path).convert('RGB').resize((width, height), Image.ANTIALIAS))
+
+        print("before assinging... ", project_folder_path)
+
         image_class.project_dir_path = project_folder_path
+
+        print("after assinging... ", image_class.project_dir_path)
+
         image_class.image_counter_class = image_counter
         image_class.image_counter_class.current_image = image_index+1
         image_class.current_image_path = current_image_path
         image_class.current_image_object = img
-        image_class.images_folder_path = original_images_folder
+        image_class.images_folder_path = user_def_images_folder
         image_class.images_list = sorted_images
         canvas = Canvas(root, width = width, height = height, cursor="hand2", bd=3)
         first_imge_on_canvas = canvas.create_image(0, 0, anchor=NW, image=img)
@@ -614,9 +624,14 @@ class ImagesHolder():
         # Updating info
         if not end:
             self.canvas = canvas
-        self.current_image_on_canvas = first_imge_on_canvas
-        self.current_image_path = current_image_path
-        self.current_image_object = img
+        try:
+            self.current_image_on_canvas = first_imge_on_canvas
+            self.current_image_path = current_image_path
+            self.current_image_object = img
+        except:
+            answer = messagebox.showinfo(title="Завершение работы", message="Процесс аннотации завершен!")
+            sleep(1)
+            root.destroy()
 
 
 
