@@ -9,7 +9,9 @@
 2. saves resized images, both colored and grayscaled in corresponding folders
 3. possibility of continuing last session
 4. undoing both keypoint declaration and keypoint assignment 
+
 <br/>
+
 *Screenshots*<br/>
 ![](Screenshot_2.png)<br/>
 ![](Screenshot_3.png)<br/>
