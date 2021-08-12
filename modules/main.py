@@ -52,12 +52,6 @@ KEY_POINTS = [
 AXES = ["x", "y"]
 
 
-def on_mousewheel(event):
-    global canvas
-    print("Envoked!", int(-1*(event.delta/120)))
-    canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-
-
 def write_config2db(dict_of_data):
 
     pickle_out = open(Path(os.path.join("config", "db.pickle")),"wb")
@@ -239,7 +233,7 @@ class LabelCounter():
             kp_label.destroy()
         except:
             kp_label = ttk.Label(root, text=text, width=1000, anchor=CENTER)
-            kp_label.grid(row=0, column=0, columnspan=4, sticky="EWNS")
+            kp_label.grid(row=0, column=0, columnspan=4, sticky="EWNS", pady=10)
         if text == "Готово!":
             return False
         else:
@@ -286,9 +280,11 @@ def invisible_button(image_class, keypoint_class):
 def undo_keypoint(event, image_class, keypoint_class, keypoint_stack):
 
     if intro:
+        print("LABEL Envoked!")
         if kp_counter.list_of_kps:
             kp_counter.delete_last_kp()
     else:
+        print("POINT Envoked!")
         label_counter.step_down()
         label_counter.show_current_label()
         image_class.canvas.delete(keypoint_stack.peek())
@@ -345,7 +341,7 @@ def adding_canvas(func):
 
 
 def start_annotation(dirname, image_class, keypoint_class):
-    global intro, label_counter, keypoint_stack, grayscaled, user_def_keypoints, dataset_path, user_def_images_folder, canvas
+    global intro, label_counter, keypoint_stack, grayscaled, user_def_keypoints, dataset_path, user_def_images_folder
     answer = messagebox.askyesno(title="Внимение!", message="Вы действительно хотите начать процесс аннотации изображении?")
     if answer == False: return;
 
@@ -423,6 +419,14 @@ def start_annotation(dirname, image_class, keypoint_class):
         invis_kp_button = ttk.Button(root, text="Невидимая ключевая точка", width=1000, command=lambda:invisible_button(image_class, keypoint_class))
         invis_kp_button.grid(row=2, column=0, columnspan=2, sticky="EWNS")
 
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+
+        if width > screen_width or width+50 > screen_width:
+            width=screen_width-50
+        if height > screen_height or height+200 > screen_height:
+            height=screen_height-200
+
 
         num_of_images = len(sorted_images)
 
@@ -437,26 +441,8 @@ def start_annotation(dirname, image_class, keypoint_class):
         image_class.images_folder_path = user_def_images_folder
         image_class.images_list = sorted_images
 
-        canvas = Canvas(root, width = img.width(), height = img.height(), cursor="hand2", bd=3)
-
-        screen_width = root.winfo_screenwidth()
-        screen_height = root.winfo_screenheight()
-
-
-        if width > screen_width or height > screen_height:
-
-            canvas.config(width=screen_width, height=screen_height, scrollregion=(0,0,img.width(),img.height()))
-            canvas.bind_all("<MouseWheel>", on_mousewheel)
-
-            hbar=Scrollbar(root,orient=HORIZONTAL)
-            hbar.grid(row=1, column=0, columnspan=3, sticky="EW")
-            hbar.config(command=canvas.xview)
-
-            canvas.config(xscrollcommand=hbar.set)
-
-        else:
-            canvas.config(width=width, height=height)
-
+        canvas = Canvas(root, cursor="hand2", bd=3)
+        canvas.config(width=width, height=height)
 
         first_imge_on_canvas = canvas.create_image(0, 0, anchor=NW, image=img)
         canvas.grid(row=1, column=0, columnspan=4)
@@ -483,7 +469,7 @@ def start_annotation(dirname, image_class, keypoint_class):
 
     else:
         # CONTINUING LAST PROJECT
-
+        intro = False
         data_dict = read_configfdb()
 
         image_index = data_dict["image_index"]
@@ -526,7 +512,7 @@ def start_annotation(dirname, image_class, keypoint_class):
             kp.destroy()
 
         invis_kp_button = ttk.Button(root, text="Невидимая ключевая точка", width=1000, command=lambda:invisible_button(image_class, keypoint_class), cursor="hand2")
-        invis_kp_button.grid(row=2, column=0, columnspan=2, sticky="EWNS")
+        invis_kp_button.grid(row=31, column=0, columnspan=2, sticky="EWNS")
         label_counter.show_current_label()
 
         img = ImageTk.PhotoImage(Image.open(current_image_path).convert('RGB').resize((width, height), Image.ANTIALIAS))
@@ -622,9 +608,20 @@ class ImagesHolder():
 
 
     def draw_image(self, image_index):
-        global user_def_keypoints, end, canvas
+        global user_def_keypoints, end
 
         self.canvas.destroy()
+
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+
+        canvas = Canvas(root, cursor="hand2", bd=3)
+
+        if self.image_size[0] > screen_width or self.image_size[0]+50 > screen_width:
+            width=screen_width-50
+        if self.image_size[1] > screen_height or self.image_size[1]+200 > screen_height:
+            height=screen_height-200
+
 
         try:
             current_image_path = os.path.join(self.images_folder_path, self.images_list[image_index])
@@ -633,26 +630,9 @@ class ImagesHolder():
         except Exception as err:
             img = ImageTk.PhotoImage(Image.open(Path(os.path.join("config", "blank.jpg"))))
             end = True
-# !!!
-        canvas = Canvas(root, width = img.width(), height = img.height(), cursor="hand2", bd=3)
 
-
-        screen_width = root.winfo_screenwidth()
-        screen_height = root.winfo_screenheight()
-
-
-        if img.width() > screen_width or img.height() > screen_height:
-            canvas.config(width=screen_width, height=screen_height, scrollregion=(0,0,img.width(),img.height()))
-            canvas.bind_all("<MouseWheel>", on_mousewheel)
-
-            hbar=Scrollbar(root,orient=HORIZONTAL)
-            hbar.grid(row=1, column=0, columnspan=3, sticky="EW")
-            hbar.config(command=canvas.xview)
-
-            canvas.config(xscrollcommand=hbar.set)
-
-        else:
-            canvas.config(width=img.width, height=img.height())
+        # width, height = self.image_size[0], self.image_size[1]
+        canvas.config(width=self.image_size[0], height=self.image_size[1])
 
 
 
@@ -682,10 +662,11 @@ keypoint_stack = KeyPointsSuperStack()
 intro = True
 
 root.rowconfigure(list(range(0,31)), weight=1)
+root.rowconfigure(0, weight=3)
+
 root.columnconfigure(list(range(0,4)), weight=3)
 root.columnconfigure(2, weight=4)
 root.columnconfigure(3, weight=4)
-
 
 screen_width, screen_height = root.winfo_screenwidth(), root.winfo_screenheight()
 
