@@ -280,11 +280,9 @@ def invisible_button(image_class, keypoint_class):
 def undo_keypoint(event, image_class, keypoint_class, keypoint_stack):
 
     if intro:
-        print("LABEL Envoked!")
         if kp_counter.list_of_kps:
             kp_counter.delete_last_kp()
     else:
-        print("POINT Envoked!")
         label_counter.step_down()
         label_counter.show_current_label()
         image_class.canvas.delete(keypoint_stack.peek())
@@ -627,12 +625,14 @@ class ImagesHolder():
             current_image_path = os.path.join(self.images_folder_path, self.images_list[image_index])
             img = ImageTk.PhotoImage(Image.open(current_image_path).convert('RGB').resize((self.image_size[0], self.image_size[1]), Image.ANTIALIAS))
             end = False
+            canvas.config(width=self.image_size[0], height=self.image_size[1])
+
         except Exception as err:
             img = ImageTk.PhotoImage(Image.open(Path(os.path.join("config", "blank.jpg"))))
             end = True
+            canvas.config(width=img.width(), height=img.height())
 
-        # width, height = self.image_size[0], self.image_size[1]
-        canvas.config(width=self.image_size[0], height=self.image_size[1])
+        # canvas.config(width=self.image_size[0], height=self.image_size[1])
 
 
 
