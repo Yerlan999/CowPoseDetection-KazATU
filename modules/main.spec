@@ -22,7 +22,7 @@ a.datas += [('blank.jpg',Path('config/blank.jpg'), "DATA"),
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 
-ic_p = Path('C:/Users/Sony/Desktop/University/CowPoseDetection-KazATU/icons/cow.ico')
+ic_p = Path('C:/Users/Sony/Desktop/University/CowPoseDetection-KazATU/icons/cow2.ico')
 
 exe = EXE(pyz,
           a.scripts,

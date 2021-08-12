@@ -1,5 +1,9 @@
 from tkinter import *
 from tkinter import messagebox, filedialog
+
+from tkinter import ttk  # Normal Tkinter.* widgets are not themed!
+from ttkthemes import ThemedTk
+
 import cv2, os, csv, pickle
 from PIL import ImageTk, Image, ImageOps
 from pathlib import Path
@@ -139,7 +143,7 @@ def on_click(event):
 def add_keypoint(event):
     if kp_counter.col_index == 0:
         row = kp_counter.step_up()
-    label = Label(root, text=added_title.get(), width=60,borderwidth=1, relief="groove", bg=labels_color)
+    label = ttk.Label(root, text=added_title.get(), width=60, anchor=CENTER)
     col = 0 if kp_counter.col_index == 0 else 2
     label.grid(row=kp_counter.current_kp+8, column=col, columnspan=2, sticky="EWNS")
     kp_counter.add_kp(label)
@@ -232,9 +236,8 @@ class LabelCounter():
         try:
             kp_label.destroy()
         except:
-            kp_label = Label(root, text=text, width=1000, height=2, borderwidth=2, relief="groove", bg=labels_color)
+            kp_label = ttk.Label(root, text=text, width=1000, anchor=CENTER)
             kp_label.grid(row=0, column=0, columnspan=4, sticky="EWNS")
-            kp_label.config(font=("Courier", 12))
         if text == "Готово!":
             return False
         else:
@@ -297,7 +300,6 @@ def next_imageKeyPress(event, image_class, keypoint_class, keypoint_stack):
 
         if len(keypoint_stack.stack) == len(user_def_keypoints):
 
-            print("BEFORE NEXT WRITING TO DB: ", image_class.project_dir_path)
             config = {
                 "image_index": image_class.image_counter_class.current_image,
                 "original_images_folder": user_def_images_folder,
@@ -314,7 +316,6 @@ def next_imageKeyPress(event, image_class, keypoint_class, keypoint_stack):
 
 
             # IMAGES SAVING HERE !!!!
-            print("when using... ", image_class.project_dir_path)
 
             os.chdir(Path(os.path.join(image_class.project_dir_path.stem, "colored")))
             image_to_save = Image.open(image_class.current_image_path).convert('RGB').resize((image_class.image_size[0], image_class.image_size[1]), Image.ANTIALIAS)
@@ -417,7 +418,7 @@ def start_annotation(dirname, image_class, keypoint_class):
 
         label_counter.show_current_label()
 
-        invis_kp_button = Button(root, text="Невидимая ключевая точка", width=1000, height=2, command=lambda:invisible_button(image_class, keypoint_class), bg=start_button_color)
+        invis_kp_button = ttk.Button(root, text="Невидимая ключевая точка", width=1000, command=lambda:invisible_button(image_class, keypoint_class))
         invis_kp_button.grid(row=2, column=0, columnspan=2, sticky="EWNS")
 
 
@@ -445,7 +446,6 @@ def start_annotation(dirname, image_class, keypoint_class):
             keypoints_xy = [key_point + "_" + axis for key_point in user_def_keypoints for axis in AXES]
             writer.writerow(["index", "image_name"] + keypoints_xy)
 
-        print("BEFORE INITIAL WRITING TO DB: ", project_full_path)
         config = {
             "image_index": 0,
             "original_images_folder": user_def_images_folder,
@@ -469,8 +469,6 @@ def start_annotation(dirname, image_class, keypoint_class):
         dataset_path = data_dict["dataset_path"]
         width, height = data_dict["image_size"]
         user_def_keypoints = data_dict["key_points_name"]
-
-        print("READING FROM DB: ", project_folder_path)
 
         label_counter = LabelCounter(user_def_keypoints)
         label_counter.thresh = True
@@ -504,17 +502,13 @@ def start_annotation(dirname, image_class, keypoint_class):
             user_def_keypoints.append(kp.cget("text").lower().strip().replace(" ", "_"))
             kp.destroy()
 
-        invis_kp_button = Button(root, text="Невидимая ключевая точка", width=1000, height=2, command=lambda:invisible_button(image_class, keypoint_class), bg=start_button_color)
+        invis_kp_button = ttk.Button(root, text="Невидимая ключевая точка", width=1000, command=lambda:invisible_button(image_class, keypoint_class))
         invis_kp_button.grid(row=2, column=0, columnspan=2, sticky="EWNS")
         label_counter.show_current_label()
 
         img = ImageTk.PhotoImage(Image.open(current_image_path).convert('RGB').resize((width, height), Image.ANTIALIAS))
 
-        print("before assinging... ", project_folder_path)
-
         image_class.project_dir_path = project_folder_path
-
-        print("after assinging... ", image_class.project_dir_path)
 
         image_class.image_counter_class = image_counter
         image_class.image_counter_class.current_image = image_index+1
@@ -613,7 +607,8 @@ class ImagesHolder():
             current_image_path = os.path.join(self.images_folder_path, self.images_list[image_index])
             img = ImageTk.PhotoImage(Image.open(current_image_path).convert('RGB').resize((self.image_size[0], self.image_size[1]), Image.ANTIALIAS))
             end = False
-        except:
+        except Exception as err:
+            print(err)
             img = ImageTk.PhotoImage(Image.open(Path(os.path.join("config", "blank.jpg"))))
             end = True
 
@@ -634,8 +629,8 @@ class ImagesHolder():
             root.destroy()
 
 
-
-root = Tk()
+root = ThemedTk(theme="equilux")
+# root = Tk()
 root.configure(background=background_color)
 
 kp_counter = KPCounter()
@@ -676,9 +671,8 @@ menubar.add_cascade(label="Помощь", menu=helpmenu)
 root.config(menu=menubar)
 
 
-main_label = Label(root, text="Программа для аннотации ключевых точек", width=120, height=2, borderwidth=2, relief="groove", bg=main_label_color)
+main_label = ttk.Label(root, text="Программа для аннотации ключевых точек", width=120, anchor=CENTER)
 main_label.grid(row=0, column=0, columnspan=4, sticky="EWNS")
-main_label.config(font=("Courier", 12))
 
 
 dir_path = StringVar()
@@ -690,55 +684,52 @@ img_height_var = StringVar()
 
 last_session_var = IntVar()
 
-last_session = Checkbutton(root, text = "продолжить прошлую сессию", variable = last_session_var, \
-                 onvalue = 1, offvalue = 0, height=1, \
-                 width = 30, command=disable_entries, bg=background_color)
-last_session.grid(row=1, column=2, columnspan=2, sticky="EWNS")
-last_session.config(font=("Courier", 10))
+last_session = ttk.Checkbutton(root, text = "Продолжить последний проект", variable = last_session_var, \
+                 onvalue = 1, offvalue = 0, \
+                 width = 30, command=disable_entries)
+last_session.grid(row=1, column=0, columnspan=5, sticky="WNS")
 
 
-proj_title = Label(root, text="Название проекта", width=60, height=2, borderwidth=2, relief="groove", bg=labels_color)
+proj_title = ttk.Label(root, text="Название проекта", width=60, anchor=CENTER)
 proj_title.grid(row=2, column=0, columnspan=2, ipadx=100, sticky="EWNS")
 
-proj_entry = Entry(root, width=60, textvariable=project_name, bg=entry_color)
+proj_entry = ttk.Entry(root, width=60, textvariable=project_name)
 proj_entry.grid(row=2, column=2, columnspan=2, ipady=7, sticky="EWNS")
 
 
-img_label_title = Label(root, text="Разрешение", width=30, height=2, borderwidth=2, relief="groove", bg=labels_color)
+img_label_title = ttk.Label(root, text="Разрешение", width=30, anchor=CENTER)
 img_label_title.grid(row=4, column=0, columnspan=2, ipadx=100, sticky="EWNS")
-img_width_title = Label(root, text="Ширина", width=20, height=2, borderwidth=2, relief="groove", bg=labels_color)
+img_width_title = ttk.Label(root, text="Ширина", justify=CENTER, width=20, anchor=CENTER)
 img_width_title.grid(row=3, column=2, columnspan=1, ipadx=100, sticky="EWNS")
-img_height_title = Label(root, text="Высота", width=20, height=2, borderwidth=2, relief="groove", bg=labels_color)
+img_height_title = ttk.Label(root, text="Высота", width=20, anchor=CENTER)
 img_height_title.grid(row=3, column=3, columnspan=1, ipadx=100, sticky="EWNS")
 
 
-img_width_entry = Entry(root, width=20, textvariable=img_width_var, validate="key", validatecommand=vcmd, bg=entry_color)
+img_width_entry = ttk.Entry(root, width=20, textvariable=img_width_var, validate="key", validatecommand=vcmd)
 img_width_entry.grid(row=4, column=2, columnspan=1, ipady=8, sticky="EWNS")
-img_height_entry = Entry(root, width=20, textvariable=img_height_var, validate="key", validatecommand=vcmd, bg=entry_color)
+img_height_entry = ttk.Entry(root, width=20, textvariable=img_height_var, validate="key", validatecommand=vcmd)
 img_height_entry.grid(row=4, column=3, columnspan=1, ipady=8, sticky="EWNS")
 
 
-dir_entry = Entry(root, width=60, textvariable=dir_path, bg=entry_color)
+dir_entry = ttk.Entry(root, width=60, textvariable=dir_path)
 dir_entry.grid(row=5, column=2, columnspan=2, padx=5, pady=10, ipady=9, sticky="EWNS")
 
-select_button = Button(root, text="Путь к папке", command=dirinput, width=60, height=2, borderwidth=2, relief="groove", bg=labels_color)
+select_button = ttk.Button(root, text="Путь к папке", command=dirinput, width=60)
 select_button.grid(row=5, column=0, columnspan=2, sticky="EWNS")
-select_button.config(font=("Courier", 8))
 
 
-kp_label_title = Label(root, text="Добавление ключевых точек", width=120, height=2, borderwidth=2, relief="groove", bg=labels_color)
+kp_label_title = ttk.Label(root, text="Добавление ключевых точек", width=120, anchor=CENTER)
 kp_label_title.grid(row=6, column=0, columnspan=4, ipadx=100, sticky="EWNS")
 
-add_entry = Entry(root, width=120, textvariable=added_title, bg=entry_color, validate="key", validatecommand=vcmd_a)
+add_entry = ttk.Entry(root, width=120, textvariable=added_title, validate="key", validatecommand=vcmd_a)
 add_entry.grid(row=7, column=0, columnspan=4, ipady=5, sticky="EWNS")
 add_entry.insert(0, 'Только на английском')
 add_entry.bind('<Button-1>', on_click)
 on_click_id = add_entry.bind('<Button-1>', on_click)
 
 
-start_button = Button(root, text="Начать", command=lambda:start_annotation(dir_path.get(), images_holder, key_points_holder), width=60, height=2, borderwidth=2, relief="groove", bg=start_button_color)
+start_button = ttk.Button(root, text="Начать", command=lambda:start_annotation(dir_path.get(), images_holder, key_points_holder), width=60)
 start_button.grid(row=30, column=0, columnspan=4, sticky="EWNS")
-start_button.config(font=("Courier", 10))
 
 
 root.bind('<Control-n>', next_imageKeyPress)
