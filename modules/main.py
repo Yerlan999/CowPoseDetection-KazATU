@@ -52,6 +52,11 @@ KEY_POINTS = [
 AXES = ["x", "y"]
 
 
+def on_mousewheel(event):
+    global canvas
+    print("Envoked!", int(-1*(event.delta/120)))
+    canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
 
 def write_config2db(dict_of_data):
 
@@ -134,20 +139,17 @@ def validate_letters(index, numbers):
     return globals()["pattern_a"].match(numbers) is not None
 
 
-def on_click(event):
-    global add_entry, on_click_id
-    add_entry.delete(0, END)
-    add_entry.unbind('<Button-1>', on_click_id)
-
-
 def add_keypoint(event):
-    if kp_counter.col_index == 0:
-        row = kp_counter.step_up()
-    label = ttk.Label(root, text=added_title.get(), width=60, anchor=CENTER)
-    col = 0 if kp_counter.col_index == 0 else 2
-    label.grid(row=kp_counter.current_kp+8, column=col, columnspan=2, sticky="EWNS")
-    kp_counter.add_kp(label)
-    add_entry.delete(0, 'end')
+
+    if len(added_title.get().strip().replace(" ", "_")):
+
+        if kp_counter.col_index == 0:
+            row = kp_counter.step_up()
+        label = ttk.Label(root, text=added_title.get(), width=60, anchor=CENTER)
+        col = 0 if kp_counter.col_index == 0 else 2
+        label.grid(row=kp_counter.current_kp+8, column=col, columnspan=2, sticky="EWNS")
+        kp_counter.add_kp(label)
+        add_entry.delete(0, 'end')
 
 
 def dirinput():
@@ -343,7 +345,7 @@ def adding_canvas(func):
 
 
 def start_annotation(dirname, image_class, keypoint_class):
-    global intro, label_counter, keypoint_stack, grayscaled, user_def_keypoints, dataset_path, user_def_images_folder
+    global intro, label_counter, keypoint_stack, grayscaled, user_def_keypoints, dataset_path, user_def_images_folder, canvas
     answer = messagebox.askyesno(title="Внимение!", message="Вы действительно хотите начать процесс аннотации изображении?")
     if answer == False: return;
 
@@ -353,7 +355,7 @@ def start_annotation(dirname, image_class, keypoint_class):
     if not contin_last_session:
         # STARTING NEW PROJECT
 
-        project_name = proj_entry.get()
+        project_name = proj_entry.get().strip().replace(" ", "_")
 
         if not project_name:
             messagebox.showerror(title="Ошибка!", message="Ошибка!", detail="Пожалуйста, введите название проекта")
@@ -366,7 +368,7 @@ def start_annotation(dirname, image_class, keypoint_class):
             return
 
 
-        if not dirname:
+        if not dirname or not os.path.isdir(dirname):
             messagebox.showerror(title="Ошибка!", message="Ошибка!", detail="Пожалуйста, введите путь к папке с изображениями")
             return
 
@@ -434,7 +436,28 @@ def start_annotation(dirname, image_class, keypoint_class):
         image_class.current_image_object = img
         image_class.images_folder_path = user_def_images_folder
         image_class.images_list = sorted_images
+
         canvas = Canvas(root, width = img.width(), height = img.height(), cursor="hand2", bd=3)
+
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+
+
+        if width > screen_width or height > screen_height:
+
+            canvas.config(width=screen_width, height=screen_height, scrollregion=(0,0,img.width(),img.height()))
+            canvas.bind_all("<MouseWheel>", on_mousewheel)
+
+            hbar=Scrollbar(root,orient=HORIZONTAL)
+            hbar.grid(row=1, column=0, columnspan=3, sticky="EW")
+            hbar.config(command=canvas.xview)
+
+            canvas.config(xscrollcommand=hbar.set)
+
+        else:
+            canvas.config(width=width, height=height)
+
+
         first_imge_on_canvas = canvas.create_image(0, 0, anchor=NW, image=img)
         canvas.grid(row=1, column=0, columnspan=4)
         image_class.canvas = canvas
@@ -502,7 +525,7 @@ def start_annotation(dirname, image_class, keypoint_class):
             user_def_keypoints.append(kp.cget("text").lower().strip().replace(" ", "_"))
             kp.destroy()
 
-        invis_kp_button = ttk.Button(root, text="Невидимая ключевая точка", width=1000, command=lambda:invisible_button(image_class, keypoint_class))
+        invis_kp_button = ttk.Button(root, text="Невидимая ключевая точка", width=1000, command=lambda:invisible_button(image_class, keypoint_class), cursor="hand2")
         invis_kp_button.grid(row=2, column=0, columnspan=2, sticky="EWNS")
         label_counter.show_current_label()
 
@@ -599,7 +622,7 @@ class ImagesHolder():
 
 
     def draw_image(self, image_index):
-        global user_def_keypoints, end
+        global user_def_keypoints, end, canvas
 
         self.canvas.destroy()
 
@@ -608,11 +631,31 @@ class ImagesHolder():
             img = ImageTk.PhotoImage(Image.open(current_image_path).convert('RGB').resize((self.image_size[0], self.image_size[1]), Image.ANTIALIAS))
             end = False
         except Exception as err:
-            print(err)
             img = ImageTk.PhotoImage(Image.open(Path(os.path.join("config", "blank.jpg"))))
             end = True
-
+# !!!
         canvas = Canvas(root, width = img.width(), height = img.height(), cursor="hand2", bd=3)
+
+
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+
+
+        if img.width() > screen_width or img.height() > screen_height:
+            canvas.config(width=screen_width, height=screen_height, scrollregion=(0,0,img.width(),img.height()))
+            canvas.bind_all("<MouseWheel>", on_mousewheel)
+
+            hbar=Scrollbar(root,orient=HORIZONTAL)
+            hbar.grid(row=1, column=0, columnspan=3, sticky="EW")
+            hbar.config(command=canvas.xview)
+
+            canvas.config(xscrollcommand=hbar.set)
+
+        else:
+            canvas.config(width=img.width, height=img.height())
+
+
+
         first_imge_on_canvas = canvas.create_image(0, 0, anchor=NW, image=img)
         canvas.grid(row=1, column=0, columnspan=4)
 
@@ -630,6 +673,7 @@ class ImagesHolder():
 
 
 root = ThemedTk(theme="equilux")
+frame = ttk.Frame(root)
 # root = Tk()
 root.configure(background=background_color)
 
@@ -652,7 +696,7 @@ key_points_holder = KeyPointsHolder()
 
 images_ext = re.compile(".*(.jpg|.jpeg)")
 
-pattern = re.compile(r'^([\.\d]*)$')
+pattern = re.compile(r'^([\d]*)$')
 vcmd = (root.register(validate_numbers), "%i", "%P")
 
 pattern_a = re.compile(r'([a-zA-Z]|\s)*$')
@@ -686,14 +730,14 @@ last_session_var = IntVar()
 
 last_session = ttk.Checkbutton(root, text = "Продолжить последний проект", variable = last_session_var, \
                  onvalue = 1, offvalue = 0, \
-                 width = 30, command=disable_entries)
-last_session.grid(row=1, column=0, columnspan=5, sticky="WNS")
+                 width = 30, command=disable_entries, cursor="hand2")
+last_session.grid(row=1, column=0, columnspan=4, sticky="EWNS")
 
 
 proj_title = ttk.Label(root, text="Название проекта", width=60, anchor=CENTER)
 proj_title.grid(row=2, column=0, columnspan=2, ipadx=100, sticky="EWNS")
 
-proj_entry = ttk.Entry(root, width=60, textvariable=project_name)
+proj_entry = ttk.Entry(root, width=60, textvariable=project_name, cursor="hand2")
 proj_entry.grid(row=2, column=2, columnspan=2, ipady=7, sticky="EWNS")
 
 
@@ -705,30 +749,27 @@ img_height_title = ttk.Label(root, text="Высота", width=20, anchor=CENTER)
 img_height_title.grid(row=3, column=3, columnspan=1, ipadx=100, sticky="EWNS")
 
 
-img_width_entry = ttk.Entry(root, width=20, textvariable=img_width_var, validate="key", validatecommand=vcmd)
+img_width_entry = ttk.Entry(root, width=20, textvariable=img_width_var, validate="key", validatecommand=vcmd, cursor="hand2")
 img_width_entry.grid(row=4, column=2, columnspan=1, ipady=8, sticky="EWNS")
-img_height_entry = ttk.Entry(root, width=20, textvariable=img_height_var, validate="key", validatecommand=vcmd)
+img_height_entry = ttk.Entry(root, width=20, textvariable=img_height_var, validate="key", validatecommand=vcmd, cursor="hand2")
 img_height_entry.grid(row=4, column=3, columnspan=1, ipady=8, sticky="EWNS")
 
 
-dir_entry = ttk.Entry(root, width=60, textvariable=dir_path)
+dir_entry = ttk.Entry(root, width=60, textvariable=dir_path, cursor="hand2")
 dir_entry.grid(row=5, column=2, columnspan=2, padx=5, pady=10, ipady=9, sticky="EWNS")
 
-select_button = ttk.Button(root, text="Путь к папке", command=dirinput, width=60)
+select_button = ttk.Button(root, text="Путь к папке", command=dirinput, width=60, cursor="hand2")
 select_button.grid(row=5, column=0, columnspan=2, sticky="EWNS")
 
 
 kp_label_title = ttk.Label(root, text="Добавление ключевых точек", width=120, anchor=CENTER)
 kp_label_title.grid(row=6, column=0, columnspan=4, ipadx=100, sticky="EWNS")
 
-add_entry = ttk.Entry(root, width=120, textvariable=added_title, validate="key", validatecommand=vcmd_a)
+add_entry = ttk.Entry(root, width=120, textvariable=added_title, validate="key", validatecommand=vcmd_a, cursor="hand2")
 add_entry.grid(row=7, column=0, columnspan=4, ipady=5, sticky="EWNS")
-add_entry.insert(0, 'Только на английском')
-add_entry.bind('<Button-1>', on_click)
-on_click_id = add_entry.bind('<Button-1>', on_click)
 
 
-start_button = ttk.Button(root, text="Начать", command=lambda:start_annotation(dir_path.get(), images_holder, key_points_holder), width=60)
+start_button = ttk.Button(root, text="Начать", command=lambda:start_annotation(dir_path.get(), images_holder, key_points_holder), width=60, cursor="hand2")
 start_button.grid(row=30, column=0, columnspan=4, sticky="EWNS")
 
 
