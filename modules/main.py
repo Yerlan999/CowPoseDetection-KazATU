@@ -24,7 +24,7 @@ def donothing():
     help_root.geometry("600x200")
     help_frame = ttk.Frame(help_root)
 
-    ttk.Label(help_frame, text="Расположите в одной папке: папку 'config', папку с изображениями и значок программы!", anchor=CENTER).pack(side=TOP, fill=BOTH, expand=True)
+    ttk.Label(help_frame, text="Располажите в одной папке: папку 'config', папку с изображениями и значок программы!", anchor=CENTER).pack(side=TOP, fill=BOTH, expand=True)
     ttk.Label(help_frame, text="После начала проекта не рекомендуется менять содержание папки с изображениями!", anchor=CENTER).pack(side=BOTTOM, fill=BOTH, expand=True)
     help_frame.pack(side=LEFT, fill=BOTH, expand=True)
     help_root.mainloop()
