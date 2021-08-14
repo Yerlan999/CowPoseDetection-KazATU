@@ -1,9 +1,7 @@
 from tkinter import *
 from tkinter import messagebox, filedialog
-
-from tkinter import ttk  # Normal Tkinter.* widgets are not themed!
+from tkinter import ttk
 from ttkthemes import ThemedTk
-
 import cv2, os, csv, pickle
 from PIL import ImageTk, Image, ImageOps
 from pathlib import Path
@@ -20,14 +18,15 @@ entry_color = "#eaefef"
 
 
 def donothing():
-    help_root = ThemedTk(theme="equilux")
+    help_root = ThemedTk(theme="black")
     help_root.geometry("600x200")
     help_frame = ttk.Frame(help_root)
 
-    ttk.Label(help_frame, text="Располажите в одной папке: папку 'config', папку с изображениями и значок программы!", anchor=CENTER).pack(side=TOP, fill=BOTH, expand=True)
-    ttk.Label(help_frame, text="После начала проекта не рекомендуется менять содержание папки с изображениями!", anchor=CENTER).pack(side=BOTTOM, fill=BOTH, expand=True)
+    ttk.Label(help_frame, text="Располажите в одной папке: папку 'config', папку с изображениями и значок программы!", anchor=CENTER, borderwidth=2, relief="groove", font=("Helvetica", 10)).pack(side=TOP, fill=BOTH, expand=True)
+    ttk.Label(help_frame, text="После начала проекта не рекомендуется менять содержание папки с изображениями!", anchor=CENTER, borderwidth=2, relief="groove", font=("Helvetica", 10)).pack(side=BOTTOM, fill=BOTH, expand=True)
     help_frame.pack(side=LEFT, fill=BOTH, expand=True)
-    help_root.mainloop()
+    help_frame.mainloop()
+
 
 
 KEY_POINTS = [
@@ -156,7 +155,7 @@ def add_keypoint(event):
 def dirinput():
     dirpath = Path(filedialog.askdirectory())
     dir_entry.delete(0, 'end')
-    dir_entry.insert(END, dirpath) # add this
+    dir_entry.insert(END, dirpath)
 
 
 class KPCounter():
@@ -239,7 +238,7 @@ class LabelCounter():
         try:
             kp_label.destroy()
         except:
-            kp_label = ttk.Label(root, text=text, width=1000, anchor=CENTER)
+            kp_label = ttk.Label(root, text=text, width=1000, anchor=CENTER, font=('Georgia', 13))
             kp_label.grid(row=0, column=0, columnspan=4, sticky="EWNS", pady=10)
         if text == "Готово!":
             return False
@@ -305,7 +304,7 @@ def next_imageKeyPress(event, image_class, keypoint_class, keypoint_stack):
             if len(keypoint_stack.stack) == len(user_def_keypoints):
 
                 config = {
-                    "image_index": image_class.image_counter_class.current_image+1,  # !!!
+                    "image_index": image_class.image_counter_class.current_image+1,
                     "original_images_folder": user_def_images_folder,
                     "project_folder_path": image_class.project_dir_path,
                     "dataset_path": dataset_path,
@@ -330,7 +329,7 @@ def next_imageKeyPress(event, image_class, keypoint_class, keypoint_stack):
                 os.chdir("..")
                 os.chdir("..")
 
-                next_image_index = image_class.image_counter_class.step_up() # !!! HERE LIES THE PROBLEM
+                next_image_index = image_class.image_counter_class.step_up()
                 image_class.draw_image(next_image_index)
                 label_counter.reset()
                 label_counter.show_current_label()
@@ -529,7 +528,7 @@ def start_annotation(dirname, image_class, keypoint_class):
         image_class.project_dir_path = project_folder_path
 
         image_class.image_counter_class = image_counter
-        image_class.image_counter_class.current_image = image_index # !!!
+        image_class.image_counter_class.current_image = image_index
         image_class.current_image_path = current_image_path
         image_class.current_image_object = img
         image_class.images_folder_path = user_def_images_folder
@@ -550,7 +549,7 @@ def create_circle(x, y, r, canvas): #center coordinates, radius
         y0 = y - r
         x1 = x + r
         y1 = y + r
-        oval = canvas.create_oval(x0, y0, x1, y1, fill="red", outline="black")
+        oval = canvas.create_oval(x0, y0, x1, y1, fill="blue", outline="black")
         keypoint_stack.update_dict(label_counter.get_current_label_name(), (x, y))
         keypoint_stack.append(oval)
 
@@ -643,14 +642,10 @@ class ImagesHolder():
             end = True
             canvas.config(width=img.width(), height=img.height())
 
-        # canvas.config(width=self.image_size[0], height=self.image_size[1])
-
-
 
         first_imge_on_canvas = canvas.create_image(0, 0, anchor=NW, image=img)
         canvas.grid(row=1, column=0, columnspan=4)
 
-        # Updating info
         if not end:
             self.canvas = canvas
         try:
@@ -663,9 +658,8 @@ class ImagesHolder():
             root.destroy()
 
 
-root = ThemedTk(theme="equilux")
+root = ThemedTk(theme="black")
 frame = ttk.Frame(root)
-# root = Tk()
 root.configure(background=background_color)
 
 kp_counter = KPCounter()
@@ -678,6 +672,16 @@ root.rowconfigure(0, weight=3)
 root.columnconfigure(list(range(0,4)), weight=3)
 root.columnconfigure(2, weight=4)
 root.columnconfigure(3, weight=4)
+
+
+ttk.Style().configure("Heading.TLabel", borderwidth=2, relief="groove", font=('Georgia', 13))
+
+ttk.Style().configure("Help.TLabel", font=('Georgia', 13))
+
+ttk.Style().configure("TLabel", borderwidth=2, relief="groove")
+ttk.Style().configure("Start.TButton", font=('Georgia', 10))
+ttk.Style().configure("TButton", anchor=CENTER)
+
 
 screen_width, screen_height = root.winfo_screenwidth(), root.winfo_screenheight()
 
@@ -707,7 +711,7 @@ menubar.add_cascade(label="Помощь", menu=helpmenu)
 root.config(menu=menubar)
 
 
-main_label = ttk.Label(root, text="Программа для аннотации ключевых точек", width=120, anchor=CENTER)
+main_label = ttk.Label(root, text="Программа для аннотации ключевых точек", width=120, anchor=CENTER, style="Heading.TLabel")
 main_label.grid(row=0, column=0, columnspan=4, sticky="EWNS")
 
 
@@ -761,7 +765,7 @@ add_entry = ttk.Entry(root, width=120, textvariable=added_title, validate="key",
 add_entry.grid(row=7, column=0, columnspan=4, ipady=5, sticky="EWNS")
 
 
-start_button = ttk.Button(root, text="Начать", command=lambda:start_annotation(dir_path.get(), images_holder, key_points_holder), width=60, cursor="hand2")
+start_button = ttk.Button(root, text="Начать", command=lambda:start_annotation(dir_path.get(), images_holder, key_points_holder), width=60, cursor="hand2", style="Start.TButton")
 start_button.grid(row=30, column=0, columnspan=4, sticky="EWNS")
 
 

@@ -8,13 +8,13 @@
 1. automaticaly creates csv file with all keypoints defined by user
 2. saves resized images, both colored and grayscaled in corresponding folders
 3. possibility of continuing last session
-4. undoing both keypoint declaration and keypoint assignment 
+4. undoing both keypoint declaration and keypoint assignment
 
 <br/>
 
 *Screenshots*<br/>
-![](Screenshot_2.png)<br/>
-![](Screenshot_3.png)<br/>
+![](Screenshot_2.jpg)<br/>
+![](Screenshot_3.jpg)<br/>
 [code here](https://github.com/Yerlan999/CowPoseDetection-KazATU/blob/main/modules/main.py)<br/>
 
 # Tool to convert JPEG images to String. <br/>
