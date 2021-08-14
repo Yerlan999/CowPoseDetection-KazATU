@@ -20,7 +20,14 @@ entry_color = "#eaefef"
 
 
 def donothing():
-    pass
+    help_root = ThemedTk(theme="equilux")
+    help_root.geometry("600x200")
+    help_frame = ttk.Frame(help_root)
+
+    ttk.Label(help_frame, text="Расположите в одной папке: папку 'config', папку с изображениями и значок программы!", anchor=CENTER).pack(side=TOP, fill=BOTH, expand=True)
+    ttk.Label(help_frame, text="После начала проекта не рекомендуется менять содержание папки с изображениями!", anchor=CENTER).pack(side=BOTTOM, fill=BOTH, expand=True)
+    help_frame.pack(side=LEFT, fill=BOTH, expand=True)
+    help_root.mainloop()
 
 
 KEY_POINTS = [
@@ -141,7 +148,7 @@ def add_keypoint(event):
             row = kp_counter.step_up()
         label = ttk.Label(root, text=added_title.get(), width=60, anchor=CENTER)
         col = 0 if kp_counter.col_index == 0 else 2
-        label.grid(row=kp_counter.current_kp+8, column=col, columnspan=2, sticky="EWNS")
+        label.grid(row=kp_counter.current_kp+8, column=col, columnspan=2, sticky="EWNS", padx=1, pady=1)
         kp_counter.add_kp(label)
         add_entry.delete(0, 'end')
 
@@ -292,42 +299,46 @@ def undo_keypoint(event, image_class, keypoint_class, keypoint_stack):
 @adding_more_args
 def next_imageKeyPress(event, image_class, keypoint_class, keypoint_stack):
 
-    if image_class.image_counter_class.current_image < len(image_class.images_list):
+    try:
+        if image_class.image_counter_class.current_image < len(image_class.images_list):
 
-        if len(keypoint_stack.stack) == len(user_def_keypoints):
+            if len(keypoint_stack.stack) == len(user_def_keypoints):
 
-            config = {
-                "image_index": image_class.image_counter_class.current_image,
-                "original_images_folder": user_def_images_folder,
-                "project_folder_path": image_class.project_dir_path,
-                "dataset_path": dataset_path,
-                "image_size": image_class.image_size,
-                "key_points_name": user_def_keypoints,
-            }
-            write_config2db(config)
+                config = {
+                    "image_index": image_class.image_counter_class.current_image+1,  # !!!
+                    "original_images_folder": user_def_images_folder,
+                    "project_folder_path": image_class.project_dir_path,
+                    "dataset_path": dataset_path,
+                    "image_size": image_class.image_size,
+                    "key_points_name": user_def_keypoints,
+                }
+                write_config2db(config)
 
-            with open(dataset_path, "a", newline='') as file:
-                writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                writer.writerow([image_class.image_counter_class.current_image, Path(image_class.current_image_path).name] + list(i for t in keypoint_stack.data2load.values() for i in t))
+                with open(dataset_path, "a", newline='') as file:
+                    writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                    writer.writerow([image_class.image_counter_class.current_image, Path(image_class.current_image_path).name] + list(i for t in keypoint_stack.data2load.values() for i in t))
 
 
-            # IMAGES SAVING HERE !!!!
+                # IMAGES SAVING HERE !!!!
 
-            os.chdir(Path(os.path.join(image_class.project_dir_path.stem, "colored")))
-            image_to_save = Image.open(image_class.current_image_path).convert('RGB').resize((image_class.image_size[0], image_class.image_size[1]), Image.ANTIALIAS)
-            image_to_save.save("cow"+str(image_class.image_counter_class.current_image)+".jpeg")
-            os.chdir("..")
-            os.chdir("grayscaled")
-            ImageOps.grayscale(image_to_save).save("cow"+str(image_class.image_counter_class.current_image)+".jpeg")
-            os.chdir("..")
-            os.chdir("..")
+                os.chdir(Path(os.path.join(image_class.project_dir_path.stem, "colored")))
+                image_to_save = Image.open(image_class.current_image_path).convert('RGB').resize((image_class.image_size[0], image_class.image_size[1]), Image.ANTIALIAS)
+                image_to_save.save("cow"+str(image_class.image_counter_class.current_image)+".jpeg")
+                os.chdir("..")
+                os.chdir("grayscaled")
+                ImageOps.grayscale(image_to_save).save("cow"+str(image_class.image_counter_class.current_image)+".jpeg")
+                os.chdir("..")
+                os.chdir("..")
 
-            next_image_index = image_class.image_counter_class.step_up() # !!! HERE LIES THE PROBLEM
-            image_class.draw_image(next_image_index)
-            label_counter.reset()
-            label_counter.show_current_label()
+                next_image_index = image_class.image_counter_class.step_up() # !!! HERE LIES THE PROBLEM
+                image_class.draw_image(next_image_index)
+                label_counter.reset()
+                label_counter.show_current_label()
 
-            keypoint_stack.stack = []
+                keypoint_stack.stack = []
+
+    except AttributeError as attrerror:
+        print(attrerror)
 
 
 
@@ -362,7 +373,7 @@ def start_annotation(dirname, image_class, keypoint_class):
             return
 
 
-        if not dirname or not os.path.isdir(dirname):
+        if not dirname or not os.path.isdir(dirname) or dirname in [".", "/", "\\"]:
             messagebox.showerror(title="Ошибка!", message="Ошибка!", detail="Пожалуйста, введите путь к папке с изображениями")
             return
 
@@ -414,7 +425,7 @@ def start_annotation(dirname, image_class, keypoint_class):
 
         label_counter.show_current_label()
 
-        invis_kp_button = ttk.Button(root, text="Невидимая ключевая точка", width=1000, command=lambda:invisible_button(image_class, keypoint_class))
+        invis_kp_button = ttk.Button(root, text="Невидимая ключевая точка", width=1000, cursor="hand2", command=lambda:invisible_button(image_class, keypoint_class))
         invis_kp_button.grid(row=2, column=0, columnspan=2, sticky="EWNS")
 
         screen_width = root.winfo_screenwidth()
@@ -498,7 +509,7 @@ def start_annotation(dirname, image_class, keypoint_class):
         image_counter = ImageCounter(num_of_images)
         image_class.image_size = (width, height)
         try:
-            current_image_path = os.path.join(user_def_images_folder, sorted_images[image_index+1])
+            current_image_path = os.path.join(user_def_images_folder, sorted_images[image_index])
         except:
             messagebox.showerror(title="Ошибка!", message="Ошибка!", detail="Извините, но прошлый проект не найден")
             return
@@ -509,8 +520,8 @@ def start_annotation(dirname, image_class, keypoint_class):
             user_def_keypoints.append(kp.cget("text").lower().strip().replace(" ", "_"))
             kp.destroy()
 
-        invis_kp_button = ttk.Button(root, text="Невидимая ключевая точка", width=1000, command=lambda:invisible_button(image_class, keypoint_class), cursor="hand2")
-        invis_kp_button.grid(row=31, column=0, columnspan=2, sticky="EWNS")
+        invis_kp_button = ttk.Button(root, text="Невидимая ключевая точка", width=1000, cursor="hand2", command=lambda:invisible_button(image_class, keypoint_class))
+        invis_kp_button.grid(row=2, column=0, columnspan=2, sticky="EWNS")
         label_counter.show_current_label()
 
         img = ImageTk.PhotoImage(Image.open(current_image_path).convert('RGB').resize((width, height), Image.ANTIALIAS))
@@ -518,7 +529,7 @@ def start_annotation(dirname, image_class, keypoint_class):
         image_class.project_dir_path = project_folder_path
 
         image_class.image_counter_class = image_counter
-        image_class.image_counter_class.current_image = image_index+1
+        image_class.image_counter_class.current_image = image_index # !!!
         image_class.current_image_path = current_image_path
         image_class.current_image_object = img
         image_class.images_folder_path = user_def_images_folder
