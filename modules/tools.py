@@ -342,3 +342,11 @@ def get_main_data(csv_file_path, images_dirname):
     current_wd = os.getcwd()
 
     return SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images
+
+
+def show_cowannot(image_index, keypoints_df, images_dirname, sorted_images):
+    # Просмотр изображении с аннотациями по номеру.
+    keypoint_cols = list(keypoints_df.columns)[2:]
+    xy = keypoints_df.iloc[image_index][keypoint_cols].values.reshape((int(len(keypoints_df.columns[2:])/2), 2))
+    plt.plot(xy[:, 0], xy[:, 1], 'ro')
+    plt.imshow(string2image(Path(os.path.join(images_dirname, sorted_images[image_index]))), cmap='gray')
