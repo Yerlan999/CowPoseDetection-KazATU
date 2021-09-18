@@ -1,5 +1,5 @@
 # CowPoseDetection-KazATU
-# Machine learning model for key-points localization of cattle using Keras
+# Machine learning model for key-points localization of cattle using Keras + custom DataAugmentation
 ### based on [this webpage](http://flothesof.github.io/convnet-face-keypoint-detection.html)<br/>
 
 [ML Model in Keras](https://github.com/Yerlan999/CowPoseDetection-KazATU/blob/main/modules/keras_model.ipynb)<br/>
