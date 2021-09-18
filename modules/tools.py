@@ -4,8 +4,10 @@ from numpy import asarray
 from itertools import tee
 from pathlib import Path
 import cv2, pickle, csv, os, sys, re, math, inspect
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageEnhance
 import matplotlib.pyplot as plt
+from skimage.util import random_noise
+
 
 
 class AugmentApply():
@@ -32,9 +34,24 @@ class AugmentApply():
                 raise ValueError("Ошибка! Проверь правописание методов.")
 
         print("Просто жди...")
-        for method in list_of_methods:
-            method.apply_me(self.SHAPE, AugmentApply.last_image_index, AugmentApply.curr_img_count, self.current_wd, self.keypoints_df, self.sorted_images, self.images_dirname, self.csv_file_path)
+
+        backup_df = pd.read_csv(csv_file_path)
+
+        try:
+            for method in list_of_methods:
+                method.apply_me(self.SHAPE, AugmentApply.last_image_index, AugmentApply.curr_img_count, self.current_wd, self.keypoints_df, self.sorted_images, self.images_dirname, self.csv_file_path)
+        except:
+            with open(csv_file_path, "w", newline='') as file:
+                writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                writer.writerow(list(backup_df.columns))
+            with open(csv_file_path, "a", newline='') as file:
+                writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                for row in backup_df.values.tolist():
+                    writer.writerow(row)
+
+
         print("Готово!")
+
 
 
 
@@ -95,6 +112,62 @@ class MirrorFlipImages():
         mirrorflipImage(SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
 
 
+class BlurImages():
+
+    def __init__(self, kernel):
+        self.kernel = kernel
+
+    def apply_me(self, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
+        print("Применение размытия изображениина " + str(self.kernel))
+        blurCSVfile(SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
+        blurImage(self.kernel, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
+
+
+class NoiseImages():
+
+    def __init__(self, amount):
+        self.amount = amount
+
+    def apply_me(self, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
+        print("Применение шума изображении на " + str(self.amount))
+        noiseCSVfile(SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
+        noiseImage(self.amount, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
+
+
+class BrightenImages():
+
+    def __init__(self, amount):
+        self.amount = amount
+
+    def apply_me(self, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
+        print("Изменение яркости изображении на " + str(self.amount))
+        brightenCSVfile(SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
+        brightenImage(self.amount, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
+
+
+class ContrastImages():
+
+    def __init__(self, amount):
+        self.amount = amount
+
+    def apply_me(self, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
+        print("Изменение контрастности изображении на " + str(self.amount))
+        contrastCSVfile(SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
+        contrastImage(self.amount, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
+
+
+class SaturationImages():
+
+    def __init__(self, amount):
+        self.amount = amount
+
+    def apply_me(self, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
+        print("Изменение насыщенности изображении на " + str(self.amount))
+        saturationCSVfile(SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
+        saturationImage(self.amount, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
+
+
+
 
 
 
@@ -110,6 +183,9 @@ def plot_cow(image):
     plt.imshow(string2image(image), cmap='gray')
 
 
+
+
+
 def rotatePoint(centerPoint, point, angle):
     """ Функция для вращения точки относительно другой точки(в данном случае, центра картинки) """
     angle = math.radians(-angle)
@@ -117,6 +193,9 @@ def rotatePoint(centerPoint, point, angle):
     temp_point = ( temp_point[0]*math.cos(angle)-temp_point[1]*math.sin(angle) , temp_point[0]*math.sin(angle)+temp_point[1]*math.cos(angle))
     temp_point = temp_point[0]+centerPoint[0] , temp_point[1]+centerPoint[1]
     return temp_point
+
+
+
 
 
 # Создание и сохранение перевернутых изображении
@@ -185,6 +264,104 @@ def mirrorflipImage(SHAPE, last_image_index, curr_img_count, current_wd, keypoin
         cv2.imwrite("cow" + str(AugmentApply.curr_img_count+1) +'.jpg', mirroredflipped_image)
         AugmentApply.curr_img_count += 1
     os.chdir(current_wd)
+
+
+def blurImage(kernel, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
+    """ Функция для вращения изображении """
+    for image_name in sorted_images:
+        image = cv2.imread(os.path.join(images_dirname, image_name))
+        height, width = image.shape[:2]
+        center = (width/2, height/2)
+        blurred_image = cv2.GaussianBlur(image, (kernel, kernel), cv2.BORDER_DEFAULT)
+        os.chdir(images_dirname)
+        cv2.imwrite("cow" + str(AugmentApply.curr_img_count+1) +'.jpg', blurred_image)
+        AugmentApply.curr_img_count += 1
+    os.chdir(current_wd)
+
+
+def noiseImage(amount, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
+    """ Функция для вращения изображении """
+    for image_name in sorted_images:
+        image = cv2.imread(os.path.join(images_dirname, image_name))
+        height, width = image.shape[:2]
+        center = (width/2, height/2)
+        noise_img = random_noise(image, mode='s&p',amount=amount)
+        noised_image = np.array(255*noise_img, dtype = 'uint8')
+        os.chdir(images_dirname)
+        cv2.imwrite("cow" + str(AugmentApply.curr_img_count+1) +'.jpg', noised_image)
+        AugmentApply.curr_img_count += 1
+    os.chdir(current_wd)
+
+
+def brightenImage(amount, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
+    """ Функция для вращения изображении """
+    for image_name in sorted_images:
+        image = cv2.imread(os.path.join(images_dirname, image_name))
+        height, width = image.shape[:2]
+        center = (width/2, height/2)
+        color_coverted = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        pil_image=Image.fromarray(color_coverted)
+
+        #image brightness enhancer
+        enhancer = ImageEnhance.Brightness(pil_image)
+        im_output = enhancer.enhance(amount)
+
+        numpy_image=np.array(im_output)
+        brightened_image=cv2.cvtColor(numpy_image, cv2.COLOR_RGB2BGR)
+
+        os.chdir(images_dirname)
+        cv2.imwrite("cow" + str(AugmentApply.curr_img_count+1) +'.jpg', brightened_image)
+        AugmentApply.curr_img_count += 1
+    os.chdir(current_wd)
+
+
+def contrastImage(amount, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
+    """ Функция для вращения изображении """
+    for image_name in sorted_images:
+        image = cv2.imread(os.path.join(images_dirname, image_name))
+        height, width = image.shape[:2]
+        center = (width/2, height/2)
+        color_coverted = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        pil_image=Image.fromarray(color_coverted)
+
+        #image brightness enhancer
+        enhancer = ImageEnhance.Contrast(pil_image)
+        im_output = enhancer.enhance(amount)
+
+        numpy_image=np.array(im_output)
+        contrasted_image=cv2.cvtColor(numpy_image, cv2.COLOR_RGB2BGR)
+
+        os.chdir(images_dirname)
+        cv2.imwrite("cow" + str(AugmentApply.curr_img_count+1) +'.jpg', contrasted_image)
+        AugmentApply.curr_img_count += 1
+    os.chdir(current_wd)
+
+
+def saturationImage(amount, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
+    """ Функция для вращения изображении """
+    for image_name in sorted_images:
+        image = cv2.imread(os.path.join(images_dirname, image_name))
+        height, width = image.shape[:2]
+        center = (width/2, height/2)
+        color_coverted = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        pil_image=Image.fromarray(color_coverted)
+
+        #image brightness enhancer
+        enhancer = ImageEnhance.Color(pil_image)
+        im_output = enhancer.enhance(amount)
+
+        numpy_image=np.array(im_output)
+        saturated_image=cv2.cvtColor(numpy_image, cv2.COLOR_RGB2BGR)
+
+        os.chdir(images_dirname)
+        cv2.imwrite("cow" + str(AugmentApply.curr_img_count+1) +'.jpg', saturated_image)
+        AugmentApply.curr_img_count += 1
+    os.chdir(current_wd)
+
+
+
+
+
 
 
 
@@ -310,10 +487,105 @@ def mirrorflipCSVfile(SHAPE, last_image_index, curr_img_count, current_wd, keypo
             writer.writerow(row)
 
 
+def blurCSVfile(SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
+
+    height, width = SHAPE[:2]
+    center = (width/2, height/2)
+    blu_keypoints_df = keypoints_df.copy()
+
+    for row in range(len(keypoints_df.index)):
+        blu_keypoints_df.iat[row, 1] = "cow" + str(AugmentApply.last_image_index+1) + ".jpg"
+        blu_keypoints_df.iat[row, 0] = AugmentApply.last_image_index + 1
+
+        AugmentApply.last_image_index += 1
+
+    with open(csv_file_path, "a", newline='') as file:
+        writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        for row in blu_keypoints_df.values.tolist():
+            writer.writerow(row)
+
+
+def noiseCSVfile(SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
+
+    height, width = SHAPE[:2]
+    center = (width/2, height/2)
+    noi_keypoints_df = keypoints_df.copy()
+
+    for row in range(len(keypoints_df.index)):
+        noi_keypoints_df.iat[row, 1] = "cow" + str(AugmentApply.last_image_index+1) + ".jpg"
+        noi_keypoints_df.iat[row, 0] = AugmentApply.last_image_index + 1
+
+        AugmentApply.last_image_index += 1
+
+    with open(csv_file_path, "a", newline='') as file:
+        writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        for row in noi_keypoints_df.values.tolist():
+            writer.writerow(row)
+
+
+def brightenCSVfile(SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
+
+    height, width = SHAPE[:2]
+    center = (width/2, height/2)
+    bri_keypoints_df = keypoints_df.copy()
+
+    for row in range(len(keypoints_df.index)):
+        bri_keypoints_df.iat[row, 1] = "cow" + str(AugmentApply.last_image_index+1) + ".jpg"
+        bri_keypoints_df.iat[row, 0] = AugmentApply.last_image_index + 1
+
+        AugmentApply.last_image_index += 1
+
+    with open(csv_file_path, "a", newline='') as file:
+        writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        for row in bri_keypoints_df.values.tolist():
+            writer.writerow(row)
+
+
+def contrastCSVfile(SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
+
+    height, width = SHAPE[:2]
+    center = (width/2, height/2)
+    con_keypoints_df = keypoints_df.copy()
+
+    for row in range(len(keypoints_df.index)):
+        con_keypoints_df.iat[row, 1] = "cow" + str(AugmentApply.last_image_index+1) + ".jpg"
+        con_keypoints_df.iat[row, 0] = AugmentApply.last_image_index + 1
+
+        AugmentApply.last_image_index += 1
+
+    with open(csv_file_path, "a", newline='') as file:
+        writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        for row in con_keypoints_df.values.tolist():
+            writer.writerow(row)
+
+
+def saturationCSVfile(SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
+
+    height, width = SHAPE[:2]
+    center = (width/2, height/2)
+    sat_keypoints_df = keypoints_df.copy()
+
+    for row in range(len(keypoints_df.index)):
+        sat_keypoints_df.iat[row, 1] = "cow" + str(AugmentApply.last_image_index+1) + ".jpg"
+        sat_keypoints_df.iat[row, 0] = AugmentApply.last_image_index + 1
+
+        AugmentApply.last_image_index += 1
+
+    with open(csv_file_path, "a", newline='') as file:
+        writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        for row in sat_keypoints_df.values.tolist():
+            writer.writerow(row)
+
+
+
+
+
 # Функция для специальной парной итерации
 def pairwise_2(iterable):
     a = iter(iterable)
     return zip(a, a)
+
+
 
 
 
@@ -342,6 +614,8 @@ def get_main_data(csv_file_path, images_dirname):
     current_wd = os.getcwd()
 
     return SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images
+
+
 
 
 def show_cowannot(image_index, keypoints_df, images_dirname, sorted_images):
