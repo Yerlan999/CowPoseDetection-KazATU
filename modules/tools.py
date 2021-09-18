@@ -28,19 +28,34 @@ class AugmentApply():
         self.sorted_images = sorted_images
         self.images_dirname = images_dirname
         self.csv_file_path = csv_file_path
+        self.last_image_index = last_image_index
+        self.curr_img_count = curr_img_count
 
-        for method in list_of_methods:
-            if not inspect.isclass(method.__class__):
-                raise ValueError("Ошибка! Проверь правописание методов.")
-
-        print("Просто жди...")
 
         backup_df = pd.read_csv(csv_file_path)
 
         try:
             for method in list_of_methods:
                 method.apply_me(self.SHAPE, AugmentApply.last_image_index, AugmentApply.curr_img_count, self.current_wd, self.keypoints_df, self.sorted_images, self.images_dirname, self.csv_file_path)
-        except:
+        except Exception as error:
+            print("Произошла ошибка. Восстановление исходных данных...")
+            print(error)
+
+            images_ext = re.compile(".*(.jpg|.jpeg)")
+
+            filtered = list(filter(images_ext.match, os.listdir(self.images_dirname)))
+            try:
+                sorted_images = sorted(filtered ,key=lambda x: int(os.path.splitext(x)[0][3:]))
+            except:
+                try:
+                    sorted_images = sorted(filtered ,key=lambda x: int(os.path.splitext(x)[0][2:]))
+                except:
+                    sorted_images = sorted(filtered)
+
+            for i, image in enumerate(sorted_images):
+                if i > self.last_image_index:
+                    os.remove(os.path.join(self.images_dirname, image))
+
             with open(csv_file_path, "w", newline='') as file:
                 writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                 writer.writerow(list(backup_df.columns))
@@ -48,9 +63,12 @@ class AugmentApply():
                 writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                 for row in backup_df.values.tolist():
                     writer.writerow(row)
+            AugmentApply.last_image_index = self.last_image_index
+            AugmentApply.curr_img_count = self.curr_img_count
+        else:
+            print("Готово!")
 
 
-        print("Готово!")
 
 
 
@@ -118,7 +136,7 @@ class BlurImages():
         self.kernel = kernel
 
     def apply_me(self, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
-        print("Применение размытия изображениина " + str(self.kernel))
+        print("Применение размытия изображении на " + str(self.kernel))
         blurCSVfile(SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
         blurImage(self.kernel, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
 
