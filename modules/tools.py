@@ -14,15 +14,14 @@ class AugmentApply():
 
     last_image_index = None
     curr_img_count = None
+    first_time = True
+    initial_images_list = None
+    initail_df = None
 
     def __init__(self, list_of_methods, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path, images_count_initail_state, csv_initial_state):
 
         self.list_of_methods = list_of_methods
         self.SHAPE = SHAPE
-
-        AugmentApply.last_image_index = last_image_index
-        AugmentApply.curr_img_count = curr_img_count
-
         self.current_wd = current_wd
         self.keypoints_df = keypoints_df
         self.sorted_images = sorted_images
@@ -31,18 +30,22 @@ class AugmentApply():
         self.last_image_index = last_image_index
         self.curr_img_count = curr_img_count
 
+        if AugmentApply.first_time:
+            AugmentApply.last_image_index = last_image_index
+            AugmentApply.curr_img_count = curr_img_count
+            AugmentApply.initial_images_list = sorted_images
+            AugmentApply.initial_df = keypoints_df
+            AugmentApply.first_time = False
+        else:
+            AugmentApply.last_image_index = images_count_initail_state
+            AugmentApply.curr_img_count = images_count_initail_state
+            self.keypoints_df = AugmentApply.initial_df
+
         backup_df = pd.read_csv(csv_file_path)
 
         # Clearing images folder to initial state before applying/reapplying Data Augmentation
-        images_ext = re.compile(".*(.jpg|.jpeg)")
-        filtered = list(filter(images_ext.match, os.listdir(self.images_dirname)))
-        try:
-            sorted_images = sorted(filtered ,key=lambda x: int(os.path.splitext(x)[0][3:]))
-        except:
-            try:
-                sorted_images = sorted(filtered ,key=lambda x: int(os.path.splitext(x)[0][2:]))
-            except:
-                sorted_images = sorted(filtered)
+        self.sorted_images = AugmentApply.initial_images_list
+
         for i, image in enumerate(sorted_images):
             if i > images_count_initail_state:
                 os.remove(os.path.join(self.images_dirname, image))
@@ -53,10 +56,11 @@ class AugmentApply():
             writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             for row in csv_initial_state.values.tolist():
                 writer.writerow(row)
-        print("Check")
 
         AugmentApply.last_image_index = images_count_initail_state
+        AugmentApply.curr_img_count = images_count_initail_state
         self.last_image_index = images_count_initail_state
+        self.curr_img_count = images_count_initail_state
 
         # Applying Data Augmentation
         try:
@@ -65,17 +69,6 @@ class AugmentApply():
         except Exception as error:
             print("Произошла ошибка. Восстановление исходных данных...")
             print(error)
-
-            images_ext = re.compile(".*(.jpg|.jpeg)")
-
-            filtered = list(filter(images_ext.match, os.listdir(self.images_dirname)))
-            try:
-                sorted_images = sorted(filtered ,key=lambda x: int(os.path.splitext(x)[0][3:]))
-            except:
-                try:
-                    sorted_images = sorted(filtered ,key=lambda x: int(os.path.splitext(x)[0][2:]))
-                except:
-                    sorted_images = sorted(filtered)
 
             for i, image in enumerate(sorted_images):
                 if i > self.last_image_index:
@@ -92,6 +85,7 @@ class AugmentApply():
             AugmentApply.curr_img_count = self.curr_img_count
         else:
             print(" ***** Готово! ***** ")
+
 
 
 
