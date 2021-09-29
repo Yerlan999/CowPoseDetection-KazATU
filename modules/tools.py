@@ -15,7 +15,7 @@ class AugmentApply():
     last_image_index = None
     curr_img_count = None
 
-    def __init__(self, list_of_methods, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
+    def __init__(self, list_of_methods, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path, images_count_initail_state, csv_initial_state):
 
         self.list_of_methods = list_of_methods
         self.SHAPE = SHAPE
@@ -31,9 +31,34 @@ class AugmentApply():
         self.last_image_index = last_image_index
         self.curr_img_count = curr_img_count
 
-
         backup_df = pd.read_csv(csv_file_path)
 
+        # Clearing images folder to initial state before applying/reapplying Data Augmentation
+        images_ext = re.compile(".*(.jpg|.jpeg)")
+        filtered = list(filter(images_ext.match, os.listdir(self.images_dirname)))
+        try:
+            sorted_images = sorted(filtered ,key=lambda x: int(os.path.splitext(x)[0][3:]))
+        except:
+            try:
+                sorted_images = sorted(filtered ,key=lambda x: int(os.path.splitext(x)[0][2:]))
+            except:
+                sorted_images = sorted(filtered)
+        for i, image in enumerate(sorted_images):
+            if i > images_count_initail_state:
+                os.remove(os.path.join(self.images_dirname, image))
+        with open(csv_file_path, "w", newline='') as file:
+            writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            writer.writerow(list(csv_initial_state.columns))
+        with open(csv_file_path, "a", newline='') as file:
+            writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            for row in csv_initial_state.values.tolist():
+                writer.writerow(row)
+        print("Check")
+
+        AugmentApply.last_image_index = images_count_initail_state
+        self.last_image_index = images_count_initail_state
+
+        # Applying Data Augmentation
         try:
             for method in list_of_methods:
                 method.apply_me(self.SHAPE, AugmentApply.last_image_index, AugmentApply.curr_img_count, self.current_wd, self.keypoints_df, self.sorted_images, self.images_dirname, self.csv_file_path)
@@ -66,7 +91,7 @@ class AugmentApply():
             AugmentApply.last_image_index = self.last_image_index
             AugmentApply.curr_img_count = self.curr_img_count
         else:
-            print("Готово!")
+            print(" ***** Готово! ***** ")
 
 
 
@@ -81,8 +106,9 @@ class RotateImages():
 
     def apply_me(self, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
         print("Применение вращения изображении на " + str(self.angle) + " градусов")
-        rotateCSVfile(self.angle, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
-        rotateImage(self.angle, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
+        cancel = rotateCSVfile(self.angle, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
+        if not cancel:
+            rotateImage(self.angle, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
 
 
 class MirrorImages():
@@ -102,7 +128,7 @@ class FlipImages():
         pass
 
     def apply_me(self, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
-        print("Применение перворота изображении")
+        print("Применение переворота изображении")
         flipCSVfile(SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
         flipImage(SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
 
@@ -115,8 +141,9 @@ class ShiftImages():
 
     def apply_me(self, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
         print("Применение смещения изображении по координате х на " + str(self.x) + " и по координате у на " + str(self.y))
-        shiftCSVfile(self.x, self.y, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
-        shiftImage(self.x, self.y, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
+        cancel = shiftCSVfile(self.x, self.y, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
+        if not cancel:
+            shiftImage(self.x, self.y, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path)
 
 
 class MirrorFlipImages():
@@ -388,6 +415,21 @@ def rotateCSVfile(angle, SHAPE, last_image_index, curr_img_count, current_wd, ke
     height, width = SHAPE[:2]
     center = (width/2, height/2)
     rot_keypoints_df = keypoints_df.copy()
+    lost_points_count = 0
+
+    # Lost point counter
+    for row in range(len(keypoints_df.index)):
+        for pair in pairwise_2(range(len(keypoints_df.columns[2:]))):
+            point_x = keypoints_df.iloc[row,2:][pair[0]]
+            point_y = keypoints_df.iloc[row,2:][pair[1]]
+            new_points = rotatePoint(center, (point_x, point_y), angle)
+            if new_points[0] < 0 or new_points[1] < 0 or new_points[0] > width or new_points[1] > height:
+                lost_points_count += 1
+
+    if lost_points_count > 0:
+        proceed = str(input("Количество потерянных точек при вращении изображении на " + str(angle) + " градусов: " + str(lost_points_count) + " Все равно применить? [Да/Нет]"))
+        if proceed.strip().lower() == "нет":
+            return True
 
     for row in range(len(keypoints_df.index)):
         rot_keypoints_df.iat[row, 1] = "cow" + str(AugmentApply.last_image_index+1) + ".jpg"
@@ -432,6 +474,7 @@ def mirrorCSVfile(SHAPE, last_image_index, curr_img_count, current_wd, keypoints
         for row in mir_keypoints_df.values.tolist():
             writer.writerow(row)
 
+
 def flipCSVfile(SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
 
     height, width = SHAPE[:2]
@@ -459,6 +502,21 @@ def shiftCSVfile(x, y, SHAPE, last_image_index, curr_img_count, current_wd, keyp
     height, width = SHAPE[:2]
     center = (width/2, height/2)
     shi_keypoints_df = keypoints_df.copy()
+    lost_points_count = 0
+
+    # Lost point counter
+    for row in range(len(keypoints_df.index)):
+        for pair in pairwise_2(range(len(keypoints_df.columns[2:]))):
+            point_x = keypoints_df.iloc[row,2:][pair[0]]
+            point_y = keypoints_df.iloc[row,2:][pair[1]]
+            new_points = (point_x + x, point_y + y)
+            if new_points[0] < 0 or new_points[1] < 0 or new_points[0] > width or new_points[1] > height:
+                lost_points_count += 1
+
+    if lost_points_count > 0:
+        proceed = str(input("Количество потерянных точек при смещении изображении по х на " + str(x) + " и по у на " + str(y) + ": " + str(lost_points_count) + " Все равно применить? [Да/Нет]"))
+        if proceed.strip().lower() == "нет":
+            return True
 
     for row in range(len(keypoints_df.index)):
         shi_keypoints_df.iat[row, 1] = "cow" + str(AugmentApply.last_image_index+1) + ".jpg"
@@ -607,7 +665,7 @@ def pairwise_2(iterable):
 
 
 
-def get_main_data(csv_file_path, images_dirname):
+def get_main_data(csv_file_path, images_dirname, first):
 
     keypoints_df = pd.read_csv(csv_file_path)
 
@@ -630,9 +688,14 @@ def get_main_data(csv_file_path, images_dirname):
     last_image_index = len(sorted_images) - 1
     curr_img_count = len(sorted_images) - 1
     current_wd = os.getcwd()
+    images_count_initail_state = len(sorted_images) - 1
+    csv_initial_state = keypoints_df
 
-    return SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images
-
+    if first:
+        csv_initial_state = keypoints_df
+        return SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_count_initail_state, csv_initial_state
+    else:
+        return SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images
 
 
 
