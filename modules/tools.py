@@ -307,6 +307,8 @@ def mirrorflipImage(SHAPE, last_image_index, curr_img_count, current_wd, keypoin
 
 def blurImage(kernel, SHAPE, last_image_index, curr_img_count, current_wd, keypoints_df, sorted_images, images_dirname, csv_file_path):
     """ Функция для вращения изображении """
+    if (kernel % 2) == 0:
+        kernel += 1
     for image_name in sorted_images:
         image = cv2.imread(os.path.join(images_dirname, image_name))
         height, width = image.shape[:2]
@@ -699,3 +701,8 @@ def show_cowannot(image_index, keypoints_df, images_dirname, sorted_images):
     xy = keypoints_df.iloc[image_index][keypoint_cols].values.reshape((int(len(keypoints_df.columns[2:])/2), 2))
     plt.plot(xy[:, 0], xy[:, 1], 'ro')
     plt.imshow(string2image(Path(os.path.join(images_dirname, sorted_images[image_index]))), cmap='gray')
+
+
+def my_congrats2U():
+    print("Желаю вам, прожить вместе такую жизнь, чтоб о ней написали книгу, а она взяла и стала бестселлером. \U0001F60E")
+    print("Привет Кингу от меня \U0001F436")
