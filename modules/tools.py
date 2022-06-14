@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 from skimage.util import random_noise
 
 
-
 class AugmentApply():
 
     last_image_index = None
