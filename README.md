@@ -22,7 +22,12 @@
 # Results of the Model <br/>
 
 <p float="left">
-  <img src="result1.png" width="200"/>
-  <img src="result2.png" width="200"/>
-  <img src="result3.png" width="200"/>
+  <img src="result1.png" width="360"/>
+  <img src="result2.png" width="360"/>
+  <img src="result3.png" width="360"/>
+</p>
+
+<p float="left">
+  <img src="gif1.gif" width="360" />
+  <img src="gif2.gif" width="360" />
 </p>
