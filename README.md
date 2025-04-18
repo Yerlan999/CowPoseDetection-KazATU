@@ -13,8 +13,8 @@
 <br/>
 
 *Screenshots*<br/>
-![](Screenshot_2.jpg)<br/>
-![](Screenshot_3.jpg)<br/>
+![](media/Screenshot_2.jpg)<br/>
+![](media/Screenshot_3.jpg)<br/>
 [code is here](https://github.com/Yerlan999/CowPoseDetection-KazATU/blob/main/modules/main.py)<br/>
 
 <br/>
@@ -22,12 +22,12 @@
 # Output of the Trained Model <br/>
 
 <p float="left">
-  <img src="result1.png" width="360"/>
-  <img src="result2.png" width="360"/>
-  <img src="result3.png" width="360"/>
+  <img src="media/result1.png" width="360"/>
+  <img src="media/result2.png" width="360"/>
+  <img src="media/result3.png" width="360"/>
 </p>
 
 <p float="left">
-  <img src="gif1.gif" width="360" />
-  <img src="gif2.gif" width="360" />
+  <img src="media/gif1.gif" width="360" />
+  <img src="media/gif2.gif" width="360" />
 </p>
