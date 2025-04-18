@@ -19,7 +19,7 @@
 
 <br/>
 
-# Results of the Model <br/>
+# Output of the Trained Model <br/>
 
 <p float="left">
   <img src="result1.png" width="360"/>
