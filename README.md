@@ -16,3 +16,13 @@
 ![](Screenshot_2.jpg)<br/>
 ![](Screenshot_3.jpg)<br/>
 [code is here](https://github.com/Yerlan999/CowPoseDetection-KazATU/blob/main/modules/main.py)<br/>
+
+<br/>
+
+# Results of the Model <br/>
+
+<p float="left">
+  <img src="result1.png" width="200"/>
+  <img src="result2.png" width="200"/>
+  <img src="result3.png" width="200"/>
+</p>
